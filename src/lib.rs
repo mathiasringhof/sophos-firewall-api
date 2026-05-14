@@ -5,6 +5,8 @@
 
 mod authz;
 mod client;
+#[cfg(feature = "blocking-http")]
+mod http;
 mod request;
 mod resources;
 mod response;
@@ -13,6 +15,8 @@ mod xml;
 
 pub use authz::{AuthorizationPolicy, AuthorizationRule, Decision, ObjectScope};
 pub use client::SophosClient;
+#[cfg(feature = "blocking-http")]
+pub use http::HttpTransport;
 pub use request::{Action, SophosConnection, SophosRequest};
 pub use resources::admin::{
     AdminApi, AdminAuthentication, AdminProfile, AdminProfileCreate, AdminProfileUpdate,
