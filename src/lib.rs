@@ -14,6 +14,10 @@ mod xml;
 pub use authz::{AuthorizationPolicy, AuthorizationRule, Decision, ObjectScope};
 pub use client::SophosClient;
 pub use request::{Action, SophosConnection, SophosRequest};
+pub use resources::admin::{
+    AdminApi, AdminAuthentication, AdminProfile, AdminProfileCreate, AdminProfileUpdate,
+    AdminSettings,
+};
 pub use resources::dns::{
     DnsApi, DnsBulkMutationResult, DnsHostAddress, DnsHostEntryCreate, DnsHostEntryUpdate,
     DnsMutationAction, DnsMutationOutcome, EntryType, IpFamily, PublishOnWan,
@@ -33,10 +37,16 @@ pub use resources::service::{
     ServiceGroupUpdateAction, ServiceGroupsApi, ServiceType, ServiceUpdate, ServiceUpdateAction,
     ServicesApi, UrlGroup, UrlGroupCreate, UrlGroupsApi,
 };
+pub use resources::system::{
+    BackupSettings as Backup, BackupUpdate, Notification, NotificationListItem as NotificationList,
+    ReportsRetention, SystemApi,
+};
+pub use resources::user::{User, UserCreate, UsersApi};
 pub use resources::webfilter::{
     UserActivity, UserActivityCreate, WebFilterApi, WebFilterPolicy, WebFilterPolicyCreate,
     WebFilterPolicyUpdate,
 };
+pub use resources::zone::{DnsForwarders, Interface, Vlan, Zone, ZoneCreate, ZoneUpdate, ZonesApi};
 pub use response::{ResourceResponse, ResourceStatus, SophosResponse, parse_response_xml};
 pub use transport::SophosTransport;
 pub use xml::build_request_xml;

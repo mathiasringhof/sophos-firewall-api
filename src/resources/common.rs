@@ -2,7 +2,9 @@ use quick_xml::Reader;
 use quick_xml::events::Event;
 use serde_json::{Map, Value};
 
-use crate::{Error, ResourceResponse, Result};
+use crate::{
+    Action, Error, ResourceResponse, Result, SophosClient, SophosRequest, SophosTransport,
+};
 
 pub(super) type FieldMap = Map<String, Value>;
 
@@ -148,6 +150,165 @@ pub(super) fn objects_from_response(
         }
     }
     Ok(objects)
+}
+
+pub(super) fn singleton_from_response(
+    resources: &[ResourceResponse],
+    resource_name: &str,
+) -> Result<ApiObject> {
+    for resource in resources
+        .iter()
+        .filter(|resource| resource.name == resource_name)
+    {
+        let nodes = parse_xml_nodes(&resource.body_xml)?;
+        if let Some(node) = nodes.iter().find(|node| node.name == resource_name) {
+            return Ok(ApiObject::new(
+                resource_name.to_string(),
+                fields_from_node(node),
+            ));
+        }
+    }
+
+    Err(Error::ResponseParse(format!(
+        "missing {resource_name} response"
+    )))
+}
+
+pub(super) fn validated_field(
+    field: impl AsRef<str>,
+    value: impl Into<Value>,
+) -> Result<(String, Value)> {
+    let field = normalize_field_name(field.as_ref())?;
+    let value = value.into();
+    validate_value_tags(&value)?;
+    Ok((field, value))
+}
+
+pub(super) fn list_objects<T, O>(
+    client: &SophosClient<T>,
+    resource: &str,
+    key: &str,
+    label: &str,
+    wrap: impl Fn(ApiObject) -> O,
+) -> Result<Vec<O>>
+where
+    T: SophosTransport,
+{
+    match client.execute(&SophosRequest::read(resource)) {
+        Ok(response) => Ok(
+            objects_from_response(&response.resources, resource, key, label)?
+                .into_iter()
+                .map(wrap)
+                .collect(),
+        ),
+        Err(Error::ZeroRecords {
+            resource: empty_resource,
+        }) if empty_resource == resource => Ok(Vec::new()),
+        Err(error) => Err(error),
+    }
+}
+
+pub(super) fn get_object<T, O>(
+    client: &SophosClient<T>,
+    resource: &str,
+    key: &str,
+    label: &str,
+    name: impl AsRef<str>,
+    wrap: impl Fn(ApiObject) -> O,
+) -> Result<Option<O>>
+where
+    T: SophosTransport,
+{
+    let name = normalize_name(label, name.as_ref())?;
+    let request = SophosRequest::read(resource)
+        .for_object(name.clone())
+        .with_object_key(key);
+
+    match client.execute(&request) {
+        Ok(response) => Ok(
+            objects_from_response(&response.resources, resource, key, label)?
+                .into_iter()
+                .find(|object| object.name() == name)
+                .map(wrap),
+        ),
+        Err(Error::ZeroRecords {
+            resource: empty_resource,
+        }) if empty_resource == resource => Ok(None),
+        Err(error) => Err(error),
+    }
+}
+
+pub(super) fn create_object<T>(
+    client: &SophosClient<T>,
+    resource: &str,
+    key: &str,
+    fields: ObjectFields,
+) -> Result<ResourceResponse>
+where
+    T: SophosTransport,
+{
+    let request = SophosRequest::new(Action::Create, resource)
+        .for_object(fields.name())
+        .with_object_key(key)
+        .with_payload(payload_with_key(key, fields.name(), fields.fields()));
+    first_named_resource(client.execute(&request)?.resources, resource)
+}
+
+pub(super) fn update_object<T>(
+    client: &SophosClient<T>,
+    resource: &str,
+    key: &str,
+    name: &str,
+    mut existing: FieldMap,
+    updates: FieldMap,
+) -> Result<ResourceResponse>
+where
+    T: SophosTransport,
+{
+    merge_fields(&mut existing, updates);
+    let request = SophosRequest::new(Action::Update, resource)
+        .for_object(name)
+        .with_object_key(key)
+        .with_payload(payload_with_key(key, name, &existing));
+    first_named_resource(client.execute(&request)?.resources, resource)
+}
+
+pub(super) fn delete_object<T>(
+    client: &SophosClient<T>,
+    resource: &str,
+    key: &str,
+    name: &str,
+) -> Result<ResourceResponse>
+where
+    T: SophosTransport,
+{
+    let request = SophosRequest::new(Action::Delete, resource)
+        .for_object(name)
+        .with_object_key(key);
+    first_named_resource(client.execute(&request)?.resources, resource)
+}
+
+pub(super) fn get_singleton<T>(client: &SophosClient<T>, resource: &str) -> Result<ApiObject>
+where
+    T: SophosTransport,
+{
+    let response = client.execute(&SophosRequest::read(resource))?;
+    singleton_from_response(&response.resources, resource)
+}
+
+pub(super) fn update_singleton<T>(
+    client: &SophosClient<T>,
+    resource: &str,
+    mut existing: FieldMap,
+    updates: FieldMap,
+) -> Result<ResourceResponse>
+where
+    T: SophosTransport,
+{
+    merge_fields(&mut existing, updates);
+    let request =
+        SophosRequest::new(Action::Update, resource).with_payload(Value::Object(existing));
+    first_named_resource(client.execute(&request)?.resources, resource)
 }
 
 fn object_from_node(node: &XmlNode, object_key: &str, label: &str) -> Result<Option<ApiObject>> {
