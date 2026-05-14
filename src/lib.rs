@@ -18,6 +18,11 @@ pub use resources::dns::{
     DnsApi, DnsBulkMutationResult, DnsHostAddress, DnsHostEntryCreate, DnsHostEntryUpdate,
     DnsMutationAction, DnsMutationOutcome, EntryType, IpFamily, PublishOnWan,
 };
+pub use resources::firewall::{
+    FirewallApi, FirewallRule, FirewallRuleCreate, FirewallRuleGroup, FirewallRuleGroupCreate,
+    FirewallRuleGroupUpdate, FirewallRuleUpdate, LocalServiceAcl, LocalServiceAclCreate,
+    LocalServiceAclUpdate,
+};
 pub use resources::network::{
     FqdnHost, FqdnHostCreate, FqdnHostGroup, FqdnHostGroupCreate, FqdnHostGroupUpdate,
     FqdnHostUpdate, IpHost, IpHostCreate, IpHostGroup, IpHostGroupCreate, IpHostGroupUpdate,
@@ -27,6 +32,10 @@ pub use resources::service::{
     Service, ServiceCreate, ServiceEntry, ServiceGroup, ServiceGroupCreate, ServiceGroupUpdate,
     ServiceGroupUpdateAction, ServiceGroupsApi, ServiceType, ServiceUpdate, ServiceUpdateAction,
     ServicesApi, UrlGroup, UrlGroupCreate, UrlGroupsApi,
+};
+pub use resources::webfilter::{
+    UserActivity, UserActivityCreate, WebFilterApi, WebFilterPolicy, WebFilterPolicyCreate,
+    WebFilterPolicyUpdate,
 };
 pub use response::{ResourceResponse, ResourceStatus, SophosResponse, parse_response_xml};
 pub use transport::SophosTransport;
