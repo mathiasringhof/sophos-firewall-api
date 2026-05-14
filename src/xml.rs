@@ -9,6 +9,9 @@ pub fn build_request_xml(connection: &SophosConnection, request: &SophosRequest)
     if let Some(object_key) = &request.object_key {
         validate_tag(object_key)?;
     }
+    if let Some(set_operation) = &request.set_operation {
+        validate_set_operation(set_operation)?;
+    }
     validate_object_name(request.object_name.as_deref())?;
     let object_key = request.object_key.as_deref().unwrap_or("Name");
 
@@ -25,14 +28,14 @@ pub fn build_request_xml(connection: &SophosConnection, request: &SophosRequest)
             object_key,
         ),
         Action::Create => build_set_xml(
-            "add",
+            request.set_operation.as_deref().unwrap_or("add"),
             &request.resource,
             request.object_name.as_deref(),
             object_key,
             &request.payload,
         )?,
         Action::Update => build_set_xml(
-            "update",
+            request.set_operation.as_deref().unwrap_or("update"),
             &request.resource,
             request.object_name.as_deref(),
             object_key,
@@ -152,6 +155,16 @@ fn validate_object_name(object_name: Option<&str>) -> Result<()> {
         ));
     }
     Ok(())
+}
+
+fn validate_set_operation(operation: &str) -> Result<()> {
+    if matches!(operation, "add" | "update" | "set") {
+        Ok(())
+    } else {
+        Err(Error::InvalidRequest(format!(
+            "invalid Set operation {operation:?}"
+        )))
+    }
 }
 
 fn text(value: &str) -> String {
