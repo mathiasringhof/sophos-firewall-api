@@ -18,6 +18,11 @@ pub use resources::dns::{
     DnsApi, DnsBulkMutationResult, DnsHostAddress, DnsHostEntryCreate, DnsHostEntryUpdate,
     DnsMutationAction, DnsMutationOutcome, EntryType, IpFamily, PublishOnWan,
 };
+pub use resources::network::{
+    FqdnHost, FqdnHostCreate, FqdnHostGroup, FqdnHostGroupCreate, FqdnHostGroupUpdate,
+    FqdnHostUpdate, IpHost, IpHostCreate, IpHostGroup, IpHostGroupCreate, IpHostGroupUpdate,
+    IpNetwork, IpNetworkCreate, IpRange, IpRangeCreate, NetworkApi, NetworkGroupUpdateAction,
+};
 pub use resources::service::{
     Service, ServiceCreate, ServiceEntry, ServiceGroup, ServiceGroupCreate, ServiceGroupUpdate,
     ServiceGroupUpdateAction, ServiceGroupsApi, ServiceType, ServiceUpdate, ServiceUpdateAction,
