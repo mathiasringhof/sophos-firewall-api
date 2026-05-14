@@ -18,7 +18,11 @@ pub use resources::dns::{
     DnsApi, DnsBulkMutationResult, DnsHostAddress, DnsHostEntryCreate, DnsHostEntryUpdate,
     DnsMutationAction, DnsMutationOutcome, EntryType, IpFamily, PublishOnWan,
 };
-pub use resources::service::{UrlGroup, UrlGroupCreate, UrlGroupsApi};
+pub use resources::service::{
+    Service, ServiceCreate, ServiceEntry, ServiceGroup, ServiceGroupCreate, ServiceGroupUpdate,
+    ServiceGroupUpdateAction, ServiceGroupsApi, ServiceType, ServiceUpdate, ServiceUpdateAction,
+    ServicesApi, UrlGroup, UrlGroupCreate, UrlGroupsApi,
+};
 pub use response::{ResourceResponse, ResourceStatus, SophosResponse, parse_response_xml};
 pub use transport::SophosTransport;
 pub use xml::build_request_xml;
