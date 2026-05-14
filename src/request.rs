@@ -57,6 +57,8 @@ pub struct SophosRequest {
     pub action: Action,
     pub resource: String,
     pub object_name: Option<String>,
+    #[serde(default)]
+    pub object_key: Option<String>,
     pub payload: Value,
     pub raw_xml: Option<String>,
 }
@@ -67,6 +69,7 @@ impl SophosRequest {
             action,
             resource: resource.into(),
             object_name: None,
+            object_key: None,
             payload: Value::Object(Default::default()),
             raw_xml: None,
         }
@@ -89,6 +92,7 @@ impl SophosRequest {
             action: Action::RawXml,
             resource: resource.into(),
             object_name: object_name.map(Into::into),
+            object_key: None,
             payload: Value::Object(Default::default()),
             raw_xml: Some(raw_xml.into()),
         }
@@ -96,6 +100,11 @@ impl SophosRequest {
 
     pub fn for_object(mut self, object_name: impl Into<String>) -> Self {
         self.object_name = Some(object_name.into());
+        self
+    }
+
+    pub fn with_object_key(mut self, object_key: impl Into<String>) -> Self {
+        self.object_key = Some(object_key.into());
         self
     }
 

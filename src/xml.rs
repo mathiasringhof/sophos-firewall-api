@@ -6,7 +6,11 @@ use crate::{Action, Error, Result, SophosConnection, SophosRequest};
 
 pub fn build_request_xml(connection: &SophosConnection, request: &SophosRequest) -> Result<String> {
     validate_tag(&request.resource)?;
+    if let Some(object_key) = &request.object_key {
+        validate_tag(object_key)?;
+    }
     validate_object_name(request.object_name.as_deref())?;
+    let object_key = request.object_key.as_deref().unwrap_or("Name");
 
     let login = format!(
         "<Login><Username>{}</Username><Password>{}</Password></Login>",
@@ -15,20 +19,30 @@ pub fn build_request_xml(connection: &SophosConnection, request: &SophosRequest)
     );
 
     let body = match request.action {
-        Action::Read => build_get_xml(&request.resource, request.object_name.as_deref()),
+        Action::Read => build_get_xml(
+            &request.resource,
+            request.object_name.as_deref(),
+            object_key,
+        ),
         Action::Create => build_set_xml(
             "add",
             &request.resource,
             request.object_name.as_deref(),
+            object_key,
             &request.payload,
         )?,
         Action::Update => build_set_xml(
             "update",
             &request.resource,
             request.object_name.as_deref(),
+            object_key,
             &request.payload,
         )?,
-        Action::Delete => build_remove_xml(&request.resource, request.object_name.as_deref())?,
+        Action::Delete => build_remove_xml(
+            &request.resource,
+            request.object_name.as_deref(),
+            object_key,
+        )?,
         Action::RawXml => {
             return Err(Error::InvalidRequest(
                 "raw XML cannot be built by the safe request builder".to_string(),
@@ -39,10 +53,10 @@ pub fn build_request_xml(connection: &SophosConnection, request: &SophosRequest)
     Ok(format!("<Request>{login}{body}</Request>"))
 }
 
-fn build_get_xml(resource: &str, object_name: Option<&str>) -> String {
+fn build_get_xml(resource: &str, object_name: Option<&str>, object_key: &str) -> String {
     match object_name {
         Some(name) => format!(
-            "<Get><{resource}><Filter><key name=\"Name\" criteria=\"=\">{}</key></Filter></{resource}></Get>",
+            "<Get><{resource}><Filter><key name=\"{object_key}\" criteria=\"=\">{}</key></Filter></{resource}></Get>",
             text(name),
         ),
         None => format!("<Get><{resource}/></Get>"),
@@ -53,6 +67,7 @@ fn build_set_xml(
     operation: &str,
     resource: &str,
     object_name: Option<&str>,
+    object_key: &str,
     payload: &Value,
 ) -> Result<String> {
     let mut fields: BTreeMap<String, Value> = match payload {
@@ -67,7 +82,7 @@ fn build_set_xml(
 
     if let Some(name) = object_name {
         fields
-            .entry("Name".to_string())
+            .entry(object_key.to_string())
             .or_insert_with(|| Value::String(name.to_string()));
     }
 
@@ -82,11 +97,11 @@ fn build_set_xml(
     ))
 }
 
-fn build_remove_xml(resource: &str, object_name: Option<&str>) -> Result<String> {
+fn build_remove_xml(resource: &str, object_name: Option<&str>, object_key: &str) -> Result<String> {
     let name = object_name
         .ok_or_else(|| Error::InvalidRequest("delete requires object_name".to_string()))?;
     Ok(format!(
-        "<Remove><{resource}><Name>{}</Name></{resource}></Remove>",
+        "<Remove><{resource}><{object_key}>{}</{object_key}></{resource}></Remove>",
         text(name)
     ))
 }

@@ -6,6 +6,7 @@
 mod authz;
 mod client;
 mod request;
+mod resources;
 mod response;
 mod transport;
 mod xml;
@@ -13,6 +14,10 @@ mod xml;
 pub use authz::{AuthorizationPolicy, AuthorizationRule, Decision, ObjectScope};
 pub use client::SophosClient;
 pub use request::{Action, SophosConnection, SophosRequest};
+pub use resources::dns::{
+    DnsApi, DnsBulkMutationResult, DnsHostAddress, DnsHostEntryCreate, DnsHostEntryUpdate,
+    DnsMutationAction, DnsMutationOutcome, EntryType, IpFamily, PublishOnWan,
+};
 pub use response::{ResourceResponse, ResourceStatus, SophosResponse, parse_response_xml};
 pub use transport::SophosTransport;
 pub use xml::build_request_xml;
