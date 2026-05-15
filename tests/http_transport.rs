@@ -6,7 +6,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use sophos_firewall::{Error, HttpTransport, SophosConnection, SophosTransport};
+use sophos_firewall_api::{Error, HttpTransport, SophosConnection, SophosTransport};
 
 fn connection(verify_tls: bool) -> SophosConnection {
     SophosConnection {

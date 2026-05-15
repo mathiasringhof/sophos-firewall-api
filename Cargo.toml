@@ -1,11 +1,11 @@
 [package]
-name = "sophos-firewall"
+name = "sophos-firewall-api"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.95"
 authors = ["Mathias Ringhof"]
 license = "MIT OR Apache-2.0"
-description = "Rust library for Sophos Firewall API access with object-scoped authorization"
+description = "Typed Rust client primitives for the Sophos Firewall XML API"
 
 [features]
 default = []

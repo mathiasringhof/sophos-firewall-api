@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use sophos_firewall::{
+use sophos_firewall_api::{
     AuthorizationPolicy, Error, SophosClient, SophosConnection, SophosRequest, SophosTransport,
     parse_response_xml,
 };
@@ -26,7 +26,7 @@ impl FakeTransport {
 }
 
 impl SophosTransport for FakeTransport {
-    fn send_xml(&self, _api_url: &str, request_xml: &str) -> sophos_firewall::Result<String> {
+    fn send_xml(&self, _api_url: &str, request_xml: &str) -> sophos_firewall_api::Result<String> {
         self.requests.borrow_mut().push(request_xml.to_string());
         Ok(self.response_xml.clone())
     }

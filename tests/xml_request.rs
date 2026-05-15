@@ -1,5 +1,5 @@
 use pretty_assertions::assert_eq;
-use sophos_firewall::{Action, SophosConnection, SophosRequest, build_request_xml};
+use sophos_firewall_api::{Action, SophosConnection, SophosRequest, build_request_xml};
 
 #[test]
 fn builds_escaped_update_request_for_named_object() {

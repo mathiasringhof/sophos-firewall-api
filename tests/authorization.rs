@@ -1,4 +1,4 @@
-use sophos_firewall::{
+use sophos_firewall_api::{
     Action, AuthorizationPolicy, AuthorizationRule, Decision, ObjectScope, SophosRequest,
 };
 

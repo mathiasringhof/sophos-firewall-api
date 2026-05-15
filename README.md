@@ -1,12 +1,12 @@
-# sophos-firewall
+# sophos-firewall-api
 
-Library-only Rust crate for Sophos Firewall API access primitives.
+Library-only Rust crate for typed Sophos Firewall XML API access.
 
 This repo deliberately contains no CLI and no web server. Those should live in
 separate repos/binaries and consume this crate, so API behavior and authorization
 rules do not drift.
 
-## Current slice
+## Current coverage
 
 Implemented with red/green TDD:
 
@@ -16,6 +16,7 @@ Implemented with red/green TDD:
 - `SophosTransport` plus `SophosClient<T>` so tests can prove authorization happens before XML generation/transport
 - optional blocking HTTP transport behind the `blocking-http` feature
 - XML response parsing into resource status/body, including structured zero-record and non-2xx API errors
+- typed helpers for DNS host entries, URL groups, services/service groups, IP/FQDN network objects, firewall rules/rule groups/local service ACLs, web filter policies/user activities, zones/interfaces/VLANs/DNS forwarders, admins, users, backup/notification/report settings
 - hard denial of raw XML in authorization and safe XML builder
 
 The first security use case is restricting an agent to change exactly one object,
@@ -26,7 +27,7 @@ for example one `WebFilterPolicy`.
 Custom transports stay simple for tests and embedding code:
 
 ```rust
-use sophos_firewall::{Result, SophosTransport};
+use sophos_firewall_api::{Result, SophosTransport};
 
 #[derive(Clone)]
 struct FakeTransport;
@@ -44,16 +45,16 @@ Sophos Firewall API endpoint:
 
 ```toml
 [dependencies]
-sophos-firewall = { version = "0.1", features = ["blocking-http"] }
+sophos-firewall-api = { version = "0.1", features = ["blocking-http"] }
 ```
 
 ```rust,no_run
-use sophos_firewall::{
+use sophos_firewall_api::{
     Action, AuthorizationPolicy, AuthorizationRule, HttpTransport, ObjectScope, SophosClient,
     SophosConnection, WebFilterPolicyUpdate,
 };
 
-# fn main() -> sophos_firewall::Result<()> {
+# fn main() -> sophos_firewall_api::Result<()> {
 let connection = SophosConnection::new("firewall.example", "api-user", "secret");
 let transport = HttpTransport::from_connection(&connection)?;
 let policy = AuthorizationPolicy::new(vec![AuthorizationRule::allow(
@@ -81,6 +82,122 @@ credentials generated into the XML are not echoed into logs by this crate. Keep
 using structured request builders plus `SophosClient` authorization: denied
 requests fail before XML generation or transport, and raw XML remains blocked by
 both authorization and the safe XML builder.
+
+## DNS examples
+
+Create a manual A record:
+
+```rust,no_run
+use sophos_firewall_api::{
+    DnsHostAddress, DnsHostEntryCreate, EntryType, HttpTransport, IpFamily, SophosClient,
+    SophosConnection,
+};
+
+# fn main() -> sophos_firewall_api::Result<()> {
+let connection = SophosConnection::new("firewall.example", "api-user", "secret");
+let transport = HttpTransport::from_connection(&connection)?;
+let client = SophosClient::new(connection, transport);
+
+let address = DnsHostAddress::new(EntryType::Manual, IpFamily::IPv4, "10.0.40.32")?;
+let entry = DnsHostEntryCreate::new("homeassistant.local.ringhof.io", vec![address])?;
+
+// force = false means: fail if the hostname already exists.
+client.dns().add_entry(entry, false)?;
+# Ok(())
+# }
+```
+
+Create or replace the same DNS host entry idempotently:
+
+```rust,no_run
+use sophos_firewall_api::{
+    DnsHostAddress, DnsHostEntryCreate, EntryType, HttpTransport, IpFamily, SophosClient,
+    SophosConnection,
+};
+
+# fn main() -> sophos_firewall_api::Result<()> {
+let connection = SophosConnection::new("firewall.example", "api-user", "secret");
+let transport = HttpTransport::from_connection(&connection)?;
+let client = SophosClient::new(connection, transport);
+
+let entry = DnsHostEntryCreate::new(
+    "grafana.local.ringhof.io",
+    vec![DnsHostAddress::new(
+        EntryType::Manual,
+        IpFamily::IPv4,
+        "10.0.30.19",
+    )?],
+)?;
+
+// force = true updates the existing host entry instead of failing.
+let outcome = client.dns().add_entry(entry, true)?;
+println!("DNS mutation: {:?}", outcome.action);
+# Ok(())
+# }
+```
+
+Update only the address while preserving the existing reverse-DNS setting:
+
+```rust,no_run
+use sophos_firewall_api::{
+    DnsHostAddress, DnsHostEntryUpdate, EntryType, HttpTransport, IpFamily, SophosClient,
+    SophosConnection,
+};
+
+# fn main() -> sophos_firewall_api::Result<()> {
+let connection = SophosConnection::new("firewall.example", "api-user", "secret");
+let transport = HttpTransport::from_connection(&connection)?;
+let client = SophosClient::new(connection, transport);
+
+let update = DnsHostEntryUpdate::new("grafana.local.ringhof.io")?.with_addresses(vec![
+    DnsHostAddress::new(EntryType::Manual, IpFamily::IPv4, "10.0.30.20")?,
+])?;
+
+client.dns().update_entry(update)?;
+# Ok(())
+# }
+```
+
+Bulk-add a small set and collect per-host errors without stopping at the first
+failure:
+
+```rust,no_run
+use sophos_firewall_api::{
+    DnsHostAddress, DnsHostEntryCreate, EntryType, HttpTransport, IpFamily, SophosClient,
+    SophosConnection,
+};
+
+# fn main() -> sophos_firewall_api::Result<()> {
+let connection = SophosConnection::new("firewall.example", "api-user", "secret");
+let transport = HttpTransport::from_connection(&connection)?;
+let client = SophosClient::new(connection, transport);
+
+let host = |name, ip| -> sophos_firewall_api::Result<DnsHostEntryCreate> {
+    Ok(DnsHostEntryCreate::new(
+        name,
+        vec![DnsHostAddress::new(EntryType::Manual, IpFamily::IPv4, ip)?],
+    )?)
+};
+
+let result = client.dns().add_many(
+    vec![
+        host("app-1.local.ringhof.io", "10.0.30.41")?,
+        host("app-2.local.ringhof.io", "10.0.30.42")?,
+    ],
+    true, // force existing records to update
+    true, // continue collecting errors after a failed host
+);
+
+println!(
+    "total={} created={} updated={} failed={}",
+    result.total, result.created, result.updated, result.failed
+);
+for error in result.errors {
+    eprintln!("{error}");
+}
+# Ok(())
+# }
+```
 
 ## Red/green proof
 

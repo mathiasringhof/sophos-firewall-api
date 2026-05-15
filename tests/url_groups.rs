@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use pretty_assertions::assert_eq;
-use sophos_firewall::{Error, SophosClient, SophosConnection, SophosTransport, UrlGroupCreate};
+use sophos_firewall_api::{Error, SophosClient, SophosConnection, SophosTransport, UrlGroupCreate};
 
 #[derive(Clone)]
 struct QueueTransport {
@@ -25,7 +25,7 @@ impl QueueTransport {
 }
 
 impl SophosTransport for QueueTransport {
-    fn send_xml(&self, _api_url: &str, request_xml: &str) -> sophos_firewall::Result<String> {
+    fn send_xml(&self, _api_url: &str, request_xml: &str) -> sophos_firewall_api::Result<String> {
         self.requests.borrow_mut().push(request_xml.to_string());
         self.responses
             .borrow_mut()
