@@ -199,6 +199,23 @@ for error in result.errors {
 # }
 ```
 
+## Related projects
+
+This crate is not the first Sophos Firewall API wrapper. It exists because the
+available options do not cover this project's target shape: a typed Rust library
+with conservative update semantics and optional object-scoped authorization.
+
+- [`sophos/sophos-firewall-sdk`](https://github.com/sophos/sophos-firewall-sdk)
+  is the official/community Sophos Python SDK for the Sophos Firewall XML API.
+  It is the closest upstream reference and remains useful for behavior and
+  resource coverage checks. It is Python-oriented and template/dict based, not a
+  Rust crate.
+- [`libopenxg`](https://crates.io/crates/libopenxg) is a Rust crate for logging
+  into Sophos XG firewalls as a user, mainly for OpenXGAuthenticator-style
+  captive-portal/auth workflows. It is not a typed configuration/XML API client.
+- [`benclerc/Sophos-XGAPI`](https://github.com/benclerc/Sophos-XGAPI) is a PHP
+  Sophos XG API wrapper. Useful prior art, but not reusable from Rust.
+
 ## Red/green proof
 
 The initial tests for each slice were written before implementation and failed
