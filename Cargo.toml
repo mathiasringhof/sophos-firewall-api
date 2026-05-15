@@ -6,6 +6,11 @@ rust-version = "1.95"
 authors = ["Mathias Ringhof"]
 license = "MIT OR Apache-2.0"
 description = "Typed Rust client primitives for the Sophos Firewall XML API"
+repository = "https://github.com/mathiasringhof/sophos-firewall-api"
+documentation = "https://docs.rs/sophos-firewall-api"
+readme = "README.md"
+keywords = ["sophos", "firewall", "api", "xml"]
+categories = ["api-bindings"]
 
 [features]
 default = []
