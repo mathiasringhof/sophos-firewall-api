@@ -46,11 +46,6 @@ pub fn build_request_xml(connection: &SophosConnection, request: &SophosRequest)
             request.object_name.as_deref(),
             object_key,
         )?,
-        Action::RawXml => {
-            return Err(Error::InvalidRequest(
-                "raw XML cannot be built by the safe request builder".to_string(),
-            ));
-        }
     };
 
     Ok(format!("<Request>{login}{body}</Request>"))

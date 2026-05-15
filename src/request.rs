@@ -8,15 +8,11 @@ pub enum Action {
     Create,
     Update,
     Delete,
-    RawXml,
 }
 
 impl Action {
     pub fn is_change(self) -> bool {
-        matches!(
-            self,
-            Self::Create | Self::Update | Self::Delete | Self::RawXml
-        )
+        matches!(self, Self::Create | Self::Update | Self::Delete)
     }
 }
 
@@ -62,7 +58,6 @@ pub struct SophosRequest {
     #[serde(default)]
     pub set_operation: Option<String>,
     pub payload: Value,
-    pub raw_xml: Option<String>,
 }
 
 impl SophosRequest {
@@ -74,7 +69,6 @@ impl SophosRequest {
             object_key: None,
             set_operation: None,
             payload: Value::Object(Default::default()),
-            raw_xml: None,
         }
     }
 
@@ -84,22 +78,6 @@ impl SophosRequest {
 
     pub fn update(resource: impl Into<String>, object_name: impl Into<String>) -> Self {
         Self::new(Action::Update, resource).for_object(object_name)
-    }
-
-    pub fn raw_xml(
-        resource: impl Into<String>,
-        object_name: Option<impl Into<String>>,
-        raw_xml: impl Into<String>,
-    ) -> Self {
-        Self {
-            action: Action::RawXml,
-            resource: resource.into(),
-            object_name: object_name.map(Into::into),
-            object_key: None,
-            set_operation: None,
-            payload: Value::Object(Default::default()),
-            raw_xml: Some(raw_xml.into()),
-        }
     }
 
     pub fn for_object(mut self, object_name: impl Into<String>) -> Self {

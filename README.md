@@ -3,24 +3,20 @@
 Library-only Rust crate for typed Sophos Firewall XML API access.
 
 This repo deliberately contains no CLI and no web server. Those should live in
-separate repos/binaries and consume this crate, so API behavior and authorization
-rules do not drift.
+separate repos/binaries and consume this crate, so Sophos API behavior does
+not drift. Authorization belongs at those application boundaries, not in this
+API crate.
 
 ## Current coverage
 
 Implemented with red/green TDD:
 
 - `SophosRequest` and `SophosConnection` primitives
-- object-scoped `AuthorizationPolicy`
 - safe XML request builder for structured read/create/update/delete operations
-- `SophosTransport` plus `SophosClient<T>` so tests can prove authorization happens before XML generation/transport
+- `SophosTransport` plus `SophosClient<T>` so tests can capture generated XML without live firewall calls
 - optional blocking HTTP transport behind the `blocking-http` feature
 - XML response parsing into resource status/body, including structured zero-record and non-2xx API errors
 - typed helpers for DNS host entries, URL groups, services/service groups, IP/FQDN network objects, firewall rules/rule groups/local service ACLs, web filter policies/user activities, zones/interfaces/VLANs/DNS forwarders, admins, users, backup/notification/report settings
-- hard denial of raw XML in authorization and safe XML builder
-
-The first security use case is restricting an agent to change exactly one object,
-for example one `WebFilterPolicy`.
 
 ## Usage
 
@@ -50,20 +46,13 @@ sophos-firewall-api = { version = "0.1", features = ["blocking-http"] }
 
 ```rust,no_run
 use sophos_firewall_api::{
-    Action, AuthorizationPolicy, AuthorizationRule, HttpTransport, ObjectScope, SophosClient,
-    SophosConnection, WebFilterPolicyUpdate,
+    HttpTransport, SophosClient, SophosConnection, WebFilterPolicyUpdate,
 };
 
 # fn main() -> sophos_firewall_api::Result<()> {
 let connection = SophosConnection::new("firewall.example", "api-user", "secret");
 let transport = HttpTransport::from_connection(&connection)?;
-let policy = AuthorizationPolicy::new(vec![AuthorizationRule::allow(
-    "agent:webfilter-bot",
-    "WebFilterPolicy",
-    ObjectScope::named(["Default Policy"]),
-    [Action::Update],
-)]);
-let client = SophosClient::new(connection, transport).with_authorization("agent:webfilter-bot", policy);
+let client = SophosClient::new(connection, transport);
 
 client
     .webfilter()
@@ -79,9 +68,7 @@ default timeout and follows `SophosConnection::verify_tls`; setting
 
 Transport errors intentionally avoid including request XML or response bodies, so
 credentials generated into the XML are not echoed into logs by this crate. Keep
-using structured request builders plus `SophosClient` authorization: denied
-requests fail before XML generation or transport, and raw XML remains blocked by
-both authorization and the safe XML builder.
+application authorization in the CLI/web server layer that calls this library.
 
 ## DNS examples
 

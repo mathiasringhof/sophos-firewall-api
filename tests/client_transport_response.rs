@@ -2,8 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use sophos_firewall_api::{
-    AuthorizationPolicy, Error, SophosClient, SophosConnection, SophosRequest, SophosTransport,
-    parse_response_xml,
+    Error, SophosClient, SophosConnection, SophosRequest, SophosTransport, parse_response_xml,
 };
 
 #[derive(Clone)]
@@ -34,24 +33,6 @@ impl SophosTransport for FakeTransport {
 
 fn connection() -> SophosConnection {
     SophosConnection::new("firewall.example", "api-user", "secret")
-}
-
-#[test]
-fn client_authorizes_before_sending_xml() {
-    let transport = FakeTransport::new("<Response/>");
-    let client = SophosClient::new(connection(), transport.clone())
-        .with_authorization("agent:webfilter-bot", AuthorizationPolicy::default());
-    let request = SophosRequest::update("WebFilterPolicy", "Default Policy");
-
-    let error = client
-        .execute(&request)
-        .expect_err("empty policy denies request");
-
-    assert!(matches!(error, Error::AuthorizationDenied(_)));
-    assert!(
-        transport.captured_requests().is_empty(),
-        "denied request must not reach transport"
-    );
 }
 
 #[test]
