@@ -418,3 +418,52 @@ fn dns_add_many_continues_and_reports_errors_with_continue_on_error() {
     assert!(result.errors[0].contains("web-1.example.com"));
     assert_eq!(transport.captured_requests().len(), 3);
 }
+
+#[test]
+fn dns_update_many_stops_on_first_error_without_continue_on_error() {
+    let (client, transport) = client_with([zero_records_response()]);
+
+    let result = client.dns().update_many(
+        vec![
+            update_with_address("missing.example.com", "10.0.0.20"),
+            update_with_address("api-1.example.com", "10.0.0.30"),
+        ],
+        false,
+    );
+
+    assert_eq!(result.total, 2);
+    assert_eq!(result.updated, 0);
+    assert_eq!(result.failed, 1);
+    assert_eq!(result.errors.len(), 1);
+    assert!(result.errors[0].contains("missing.example.com"));
+    assert_eq!(transport.captured_requests().len(), 1);
+}
+
+#[test]
+fn dns_update_many_continues_and_reports_errors_with_continue_on_error() {
+    let (client, transport) = client_with([
+        zero_records_response(),
+        existing_response("api-1.example.com", "10.0.0.10"),
+        success_response("Updated"),
+    ]);
+
+    let result = client.dns().update_many(
+        vec![
+            update_with_address("missing.example.com", "10.0.0.20"),
+            update_with_address("api-1.example.com", "10.0.0.30"),
+        ],
+        true,
+    );
+
+    assert_eq!(result.total, 2);
+    assert_eq!(result.updated, 1);
+    assert_eq!(result.failed, 1);
+    assert_eq!(result.errors.len(), 1);
+    assert!(result.errors[0].contains("missing.example.com"));
+
+    let requests = transport.captured_requests();
+    assert_eq!(requests.len(), 3);
+    assert!(requests[2].contains("<Set operation=\"update\"><DNSHostEntry>"));
+    assert!(requests[2].contains("<HostName>api-1.example.com</HostName>"));
+    assert!(requests[2].contains("<IPAddress>10.0.0.30</IPAddress>"));
+}
