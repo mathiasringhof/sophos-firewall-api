@@ -3,9 +3,8 @@
 Library-only Rust crate for typed Sophos Firewall XML API access.
 
 This repo deliberately contains no CLI and no web server. Those should live in
-separate repos/binaries and consume this crate, so Sophos API behavior does
-not drift. Authorization belongs at those application boundaries, not in this
-API crate.
+separate repos/binaries and consume this crate, so Sophos API behavior stays
+centralized.
 
 ## Current coverage
 
@@ -67,8 +66,7 @@ default timeout and follows `SophosConnection::verify_tls`; setting
 `verify_tls = false` accepts invalid certificates for lab/self-signed firewalls.
 
 Transport errors intentionally avoid including request XML or response bodies, so
-credentials generated into the XML are not echoed into logs by this crate. Keep
-application authorization in the CLI/web server layer that calls this library.
+credentials generated into the XML are not echoed into logs by this crate.
 
 ## DNS examples
 
