@@ -1,0 +1,22 @@
+[package]
+name = "sophos-firewall-web"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+authors = ["Mathias Ringhof"]
+license = "MIT OR Apache-2.0"
+description = "Agent-facing HTTP API for Sophos Firewall automation"
+
+[dependencies]
+axum = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sophos-firewall-api = { path = "..", features = ["blocking-http"] }
+thiserror = "2.0"
+tokio = { version = "1.48", features = ["macros", "net", "rt-multi-thread", "signal"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+pretty_assertions = "1.4"
+tower = { version = "0.5", features = ["util"] }

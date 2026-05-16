@@ -2,8 +2,8 @@
 
 Library-only Rust crate for typed Sophos Firewall XML API access.
 
-This repo deliberately contains no CLI and no web server. Those should live in
-separate repos/binaries and consume this crate, so Sophos API behavior stays
+The root crate stays library-only. Companion frontends live as separate
+workspace members and consume this crate, so Sophos API behavior stays
 centralized.
 
 ## Current coverage
@@ -16,6 +16,7 @@ Implemented with red/green TDD:
 - optional blocking HTTP transport behind the `blocking-http` feature
 - XML response parsing into resource status/body, including structured zero-record and non-2xx API errors
 - typed helpers for DNS host entries, URL groups, services/service groups, IP/FQDN network objects, firewall rules/rule groups/local service ACLs, web filter policies/user activities, zones/interfaces/VLANs/DNS forwarders, admins, users, backup/notification/report settings
+- `sophos-firewall-web`, a thin agent-facing HTTP API wrapper for DNS, URL groups, firewall rules, and firewall rule groups
 
 ## Usage
 
@@ -194,10 +195,10 @@ tests passed.
 
 ```bash
 cargo fmt --all --check
-cargo test
-cargo clippy --all-targets -- -D warnings
-cargo test --features blocking-http
-cargo clippy --all-targets --features blocking-http -- -D warnings
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace --all-features
+cargo clippy --workspace --all-features --all-targets -- -D warnings
 ```
 
 ## Python reference

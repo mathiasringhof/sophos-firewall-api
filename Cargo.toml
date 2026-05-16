@@ -12,6 +12,10 @@ readme = "README.md"
 keywords = ["sophos", "firewall", "api", "xml"]
 categories = ["api-bindings"]
 
+[workspace]
+members = ["sophos-firewall-web"]
+resolver = "3"
+
 [features]
 default = []
 blocking-http = ["dep:reqwest"]
